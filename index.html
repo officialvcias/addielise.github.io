@@ -13,7 +13,7 @@
             padding: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: white;
@@ -22,66 +22,158 @@
         header {
             background-color: #4A148C; /* Slightly dark purple */
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
         }
-        #login {
-            text-align: center;
-            margin: 20px 0;
+        header h1 {
+            margin: 0;
         }
-        #content {
+        .admin-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #6A1B9A;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        .admin-btn:hover {
+            background-color: #7B1FA2;
+        }
+
+        /* Modal */
+        .modal {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+        .close:hover {
+            color: #000;
+        }
+
         input[type="text"], input[type="password"], input[type="url"] {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 12px;
+            margin: 12px 0;
             box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         button {
             background-color: #4A148C;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
         }
         button:hover {
             background-color: #6A1B9A;
         }
         .video-list {
-            margin-top: 20px;
+            margin-top: 30px;
         }
         .video-item {
-            margin-bottom: 20px;
+            margin-bottom: 40px;
             text-align: center;
+            position: relative;
         }
         iframe {
             width: 100%;
             height: 315px;
             max-width: 560px;
+            border: none;
+            border-radius: 8px;
+        }
+        .remove-btn {
+            display: none;
+            background-color: #d32f2f;
+            color: white;
+            padding: 8px 16px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .remove-btn:hover {
+            background-color: #b71c1c;
+        }
+        .logged-in .remove-btn {
+            display: inline-block;
+        }
+        #add-section {
+            display: none;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f9f5ff;
+            border-radius: 8px;
+            border: 1px solid #e0d4ff;
+        }
+        .logged-in #add-section {
+            display: block;
         }
     </style>
 </head>
 <body>
     <header>
         <h1>My Podcast Listener</h1>
+        <p>Enjoy the episodes below</p>
     </header>
+
+    <button class="admin-btn" onclick="openLoginModal()">Admin / Add Video</button>
+
     <div class="container">
-        <div id="login">
-            <h2>Login</h2>
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="login()">Login</button>
-            <p id="error" style="color: red;"></p>
-        </div>
-        <div id="content">
-            <h2>Add a YouTube Video</h2>
-            <input type="url" id="youtube-url" placeholder="Paste YouTube link here">
-            <button onclick="addVideo()">Add Video</button>
-            <div class="video-list" id="video-list">
-                <h3>Added Podcasts</h3>
-                <!-- Videos will be added here -->
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>Admin Login</h2>
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button onclick="login()">Login</button>
+                <p id="error" style="color: red; margin-top: 10px;"></p>
             </div>
+        </div>
+
+        <div id="add-section">
+            <h2>Add a YouTube Video</h2>
+            <input type="url" id="youtube-url" placeholder="Paste YouTube link here (e.g. https://youtu.be/...)">
+            <button onclick="addVideo()">Add Video</button>
+        </div>
+
+        <div class="video-list" id="video-list">
+            <h2>Episodes</h2>
+            <!-- Videos appear here -->
         </div>
     </div>
 
@@ -91,16 +183,31 @@
             { username: 'Elise', password: 'Fred' }
         ];
 
+        let isLoggedIn = false;
+
+        function openLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('error').textContent = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function closeModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
         function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
             const error = document.getElementById('error');
 
             const user = validUsers.find(u => u.username === username && u.password === password);
+
             if (user) {
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-                loadVideos();
+                isLoggedIn = true;
+                document.body.classList.add('logged-in');
+                closeModal();
+                loadVideos(); // refresh to show remove buttons
             } else {
                 error.textContent = 'Invalid username or password.';
             }
@@ -113,30 +220,59 @@
         }
 
         function addVideo() {
-            const url = document.getElementById('youtube-url').value;
+            if (!isLoggedIn) return;
+
+            const url = document.getElementById('youtube-url').value.trim();
             const videoId = getVideoId(url);
+
             if (videoId) {
                 let videos = JSON.parse(localStorage.getItem('podcasts')) || [];
-                videos.push(videoId);
-                localStorage.setItem('podcasts', JSON.stringify(videos));
+                if (!videos.includes(videoId)) {
+                    videos.push(videoId);
+                    localStorage.setItem('podcasts', JSON.stringify(videos));
+                }
                 document.getElementById('youtube-url').value = '';
                 loadVideos();
             } else {
-                alert('Invalid YouTube URL.');
+                alert('Please enter a valid YouTube URL.');
+            }
+        }
+
+        function removeVideo(videoId) {
+            if (!isLoggedIn) return;
+
+            if (confirm('Remove this episode?')) {
+                let videos = JSON.parse(localStorage.getItem('podcasts')) || [];
+                videos = videos.filter(id => id !== videoId);
+                localStorage.setItem('podcasts', JSON.stringify(videos));
+                loadVideos();
             }
         }
 
         function loadVideos() {
             const videoList = document.getElementById('video-list');
-            videoList.innerHTML = '<h3>Added Podcasts</h3>';
+            videoList.innerHTML = '<h2>Episodes</h2>';
+
             const videos = JSON.parse(localStorage.getItem('podcasts')) || [];
+
+            if (videos.length === 0) {
+                videoList.innerHTML += '<p style="text-align:center;color:#666;">No episodes added yet.</p>';
+                return;
+            }
+
             videos.forEach(videoId => {
                 const div = document.createElement('div');
                 div.className = 'video-item';
-                div.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                div.innerHTML = `
+                    <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+                    <button class="remove-btn" onclick="removeVideo('${videoId}')">Remove Episode</button>
+                `;
                 videoList.appendChild(div);
             });
         }
+
+        // Load videos on page load (public view)
+        window.onload = loadVideos;
     </script>
 </body>
 </html>
