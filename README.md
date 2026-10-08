@@ -13,6 +13,8 @@ Deploy this repository to Netlify. The deployment builds the frontend, publishes
 
 The server rejects uninvited signup completion and requires both a confirmed invitation and the server-managed `admin` role for changes. The invitation check runs when signup completes, after Identity records the invitation, so it does not block sending invitation emails. Keep Identity registration set to **Invite only** to prevent public registrations. The old browser-only username/password login is no longer used. Invitations and password-reset links are handled by the site's sign-in dialog.
 
+After an invitation password is saved, the site switches to sign-in rather than attempting to reuse the invitation. If the account is missing administrator access, the site owner must add the `admin` role before the user signs in again; another invitation is not needed. If the invitation link is missing, open the full link from the invitation email. If the password was already saved, sign in with the email address and that password, or use **Forgot password**.
+
 ## Recover existing episodes
 
 Previously, episodes were saved separately in each browser. On the device and browser where you originally added them, open the same Netlify site address, sign in as an invited administrator, and select **Publish episodes saved on this device**. Confirm to import them into the shared library. Repeat on other browsers with their own saved episodes if needed. Duplicate episode IDs are ignored, and local data is cleared only after a successful import.
