@@ -204,25 +204,44 @@ element('loginModal').addEventListener('keydown', event => {
 element('auth-form').addEventListener('submit', async event => {
     event.preventDefault();
     const button = element('login-button');
+    if (button.disabled) return;
     button.disabled = true;
     message('error', 'Signing in…');
+    let passwordSaved = false;
     try {
         let user;
         const password = element('password').value;
         if (authMode === 'invite') {
+            if (!inviteToken) {
+                openModal('login');
+                throw new Error('The invitation link is missing. Open the full link from your invitation email, or sign in if you already saved your password.');
+            }
             user = await acceptInvite(inviteToken, password);
             inviteToken = undefined;
-        } else if (authMode === 'recovery') user = await updateUser({ password });
-        else user = await login(element('email').value.trim(), password);
+            passwordSaved = true;
+            openModal('login');
+            element('email').value = user.email;
+            user = await login(user.email, password);
+        } else if (authMode === 'recovery') {
+            user = await updateUser({ password });
+            passwordSaved = true;
+            openModal('login');
+            element('email').value = user.email;
+        } else user = await login(element('email').value.trim(), password);
         updateAuth(user);
         if (!isAdmin) {
             await logout();
-            throw new Error('Your account needs an invitation and the admin role. Contact the site owner.');
+            openModal('login');
+            throw new Error(passwordSaved ?
+                'Your password was saved, but your account does not have administrator access. Ask the site owner to add the admin role, then sign in.' :
+                'Your account needs an invitation and the admin role. Contact the site owner.');
         }
         closeModal();
         message('episode-status', 'Signed in. Episode changes are shared across all devices.');
     } catch (error) {
-        message('error', error.status === 401 ? 'Invalid email or password.' :
+        message('error', passwordSaved && authMode === 'login' && error.status === 401 ?
+            'Your password was saved. Sign in with your email and new password.' :
+            error.status === 401 ? 'Invalid email or password.' :
             error.message || 'Sign in failed. Please try again.', true);
     } finally {
         button.disabled = false;
