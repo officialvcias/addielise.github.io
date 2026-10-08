@@ -1,7 +1,7 @@
-import type { UserValidateEvent } from '@netlify/functions';
+import type { UserSignupEvent } from '@netlify/functions';
 
 export default {
-    userValidate(event: UserValidateEvent) {
+    userSignup(event: UserSignupEvent) {
         if (!event.user.invitedAt) return event.deny();
     },
 };

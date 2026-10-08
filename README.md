@@ -11,7 +11,7 @@ Deploy this repository to Netlify. The deployment builds the frontend, publishes
 3. Edit each invited user's roles and add the exact role `admin`. Do not assign this role to ordinary visitors.
 4. Open the invitation email's link and choose a password. Then use **Admin • Add Episode** to sign in with the invited email address.
 
-The server rejects public signup validation and requires both a confirmed invitation and the server-managed `admin` role for changes. The old browser-only username/password login is no longer used. Invitations and password-reset links are handled by the site's sign-in dialog.
+The server rejects uninvited signup completion and requires both a confirmed invitation and the server-managed `admin` role for changes. The invitation check runs when signup completes, after Identity records the invitation, so it does not block sending invitation emails. Keep Identity registration set to **Invite only** to prevent public registrations. The old browser-only username/password login is no longer used. Invitations and password-reset links are handled by the site's sign-in dialog.
 
 ## Recover existing episodes
 
