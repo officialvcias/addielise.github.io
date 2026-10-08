@@ -121,7 +121,7 @@
             color: #e0d4ff;
         }
 
-        input[type="text"], input[type="password"], input[type="url"] {
+        input[type="email"], input[type="password"], input[type="url"] {
             width: 100%;
             padding: 14px;
             margin: 14px 0;
@@ -158,7 +158,7 @@
         .video-list {
             margin-top: 40px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
             gap: 30px;
         }
         .video-item {
@@ -214,6 +214,12 @@
             color: #d1c4e9;
             text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
+        button:disabled { opacity: 0.6; cursor: wait; transform: none; }
+        .status { color: #d1c4e9; min-height: 1.4em; }
+        .status.error { color: #ff8a80; }
+        #logout-button { display: none; margin-top: 16px; }
+        .logged-in #logout-button { display: inline-block; }
+        .modal-content { max-height: 80vh; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -223,128 +229,47 @@
         <p>Immerse yourself in the episodes</p>
     </header>
 
-    <button class="admin-btn" onclick="openLoginModal()">Admin • Add Episode</button>
+    <button class="admin-btn" id="admin-button">Admin • Add Episode</button>
 
     <div class="container">
         <!-- Login Modal -->
-        <div id="loginModal" class="modal">
+        <div id="loginModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
             <div class="modal-content">
-                <span class="close" onclick="closeModal()" style="color:#d1c4e9; font-size:36px; float:right; cursor:pointer;">×</span>
-                <h2 style="margin-top:0;">Admin Access</h2>
-                <input type="text" id="username" placeholder="Username">
-                <input type="password" id="password" placeholder="Password">
-                <button onclick="login()" style="margin-top:20px; width:100%;">Login</button>
-                <p id="error" style="color: #ff8a80; margin-top: 16px; min-height:1.4em;"></p>
+                <button id="close-modal" aria-label="Close administrator sign in" style="float:right; padding:4px 12px;">×</button>
+                <h2 id="auth-title" style="margin-top:0;">Admin Access</h2>
+                <p id="auth-description">Sign in with your invited administrator account.</p>
+                <form id="auth-form">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Email address" autocomplete="username" required>
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+                    <button id="login-button" type="submit" style="margin-top:20px; width:100%;">Sign in</button>
+                </form>
+                <button id="forgot-password" type="button" style="margin-top:16px;">Forgot password</button>
+                <p id="error" class="status" role="status" aria-live="polite"></p>
             </div>
         </div>
 
         <div id="add-section">
             <h2>Add New Episode</h2>
-            <input type="url" id="youtube-url" placeholder="Paste YouTube link here (youtu.be or youtube.com/watch?...)" />
-            <button onclick="addVideo()" style="margin-top:16px;">Add Episode</button>
+            <form id="episode-form">
+                <label for="youtube-url">YouTube episode link</label>
+                <input type="url" id="youtube-url" placeholder="Paste YouTube link here (youtu.be or youtube.com/watch?...)" required />
+                <button id="add-button" type="submit" style="margin-top:16px;">Add Episode</button>
+            </form>
+            <p>Published episodes are shared across all devices.</p>
+            <button id="import-button" type="button" hidden>Publish episodes saved on this device</button>
+            <button id="logout-button" type="button">Sign out</button>
         </div>
+
+        <p id="episode-status" class="status" role="status" aria-live="polite">Loading episodes…</p>
+        <button id="retry-button" type="button" hidden>Retry loading episodes</button>
 
         <div class="video-list" id="video-list">
             <!-- Episodes appear here as cards -->
         </div>
     </div>
 
-    <script>
-        // ──────────────────────────────────────────────
-        // Your existing JavaScript remains unchanged
-        // ──────────────────────────────────────────────
-
-        const validUsers = [
-            { username: 'Addie', password: 'Fred' },
-            { username: 'Elise', password: 'Fred' }
-        ];
-
-        let isLoggedIn = false;
-
-        function openLoginModal() {
-            document.getElementById('loginModal').style.display = 'flex';
-            document.getElementById('error').textContent = '';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-        }
-
-        function closeModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
-
-        function login() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const error = document.getElementById('error');
-
-            const user = validUsers.find(u => u.username === username && u.password === password);
-
-            if (user) {
-                isLoggedIn = true;
-                document.body.classList.add('logged-in');
-                closeModal();
-                loadVideos();
-            } else {
-                error.textContent = 'Invalid credentials.';
-            }
-        }
-
-        function getVideoId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function addVideo() {
-            if (!isLoggedIn) return;
-            const url = document.getElementById('youtube-url').value.trim();
-            const videoId = getVideoId(url);
-            if (videoId) {
-                let videos = JSON.parse(localStorage.getItem('podcasts')) || [];
-                if (!videos.includes(videoId)) {
-                    videos.push(videoId);
-                    localStorage.setItem('podcasts', JSON.stringify(videos));
-                }
-                document.getElementById('youtube-url').value = '';
-                loadVideos();
-            } else {
-                alert('Please enter a valid YouTube URL.');
-            }
-        }
-
-        function removeVideo(videoId) {
-            if (!isLoggedIn) return;
-            if (confirm('Remove this episode?')) {
-                let videos = JSON.parse(localStorage.getItem('podcasts')) || [];
-                videos = videos.filter(id => id !== videoId);
-                localStorage.setItem('podcasts', JSON.stringify(videos));
-                loadVideos();
-            }
-        }
-
-        function loadVideos() {
-            const videoList = document.getElementById('video-list');
-            videoList.innerHTML = '';
-
-            const videos = JSON.parse(localStorage.getItem('podcasts')) || [];
-
-            if (videos.length === 0) {
-                videoList.innerHTML = '<p style="text-align:center; color:#b39ddb; font-size:1.2rem; padding:40px 0;">No episodes added yet.</p>';
-                return;
-            }
-
-            videos.forEach(videoId => {
-                const div = document.createElement('div');
-                div.className = 'video-item';
-                div.innerHTML = `
-                    <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
-                    <button class="remove-btn" onclick="removeVideo('${videoId}')">Remove Episode</button>
-                `;
-                videoList.appendChild(div);
-            });
-        }
-
-        window.onload = loadVideos;
-    </script>
+    <script type="module" src="/src/app.js"></script>
 </body>
 </html>
